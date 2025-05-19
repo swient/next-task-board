@@ -11,27 +11,36 @@ export default function TaskDetail({ params }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
-  // 儲存按鈕事件，更新 localStorage 並導回首頁
-  const handleSave = () => {
+  // 儲存按鈕事件，更新伺服器資料並導回首頁
+  const handleSave = async () => {
     if (title.trim() === "" || description.trim() === "") return;
 
     // 取得所有任務，找到對應 id 的任務並更新
-    const saveTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    const res = await fetch("/api/tasks");
+    const saveTasks = await res.json();
     const updatedTasks = saveTasks.map((task) =>
       task.id === Number(id) ? { ...task, title, description } : task
     );
-    localStorage.setItem("tasks", JSON.stringify(updatedTasks));
+    await fetch("/api/tasks", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updatedTasks),
+    });
     router.push("/");
   };
 
-  // 載入時根據 id 取得任務資料並設置狀態
+  // 載入時根據 id 透過 fetch API 取得任務資料並設置狀態
   useEffect(() => {
-    const saveTasks = JSON.parse(localStorage.getItem("tasks")) || [];
-    const task = saveTasks.find((task) => task.id === Number(id));
-    if (task) {
-      setTitle(task.title);
-      setDescription(task.description);
-    }
+    const fetchTask = async () => {
+      const res = await fetch("/api/tasks");
+      const saveTasks = await res.json();
+      const task = saveTasks.find((task) => task.id === Number(id));
+      if (task) {
+        setTitle(task.title);
+        setDescription(task.description);
+      }
+    };
+    fetchTask();
   }, [id]);
 
   return (
